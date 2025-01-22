@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header con información del empleado -->
+    <div class="card bg-primary text-white mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">{{ empleado.nombre }}</h1>
+                    <p class="mb-0 text-white-50">{{ empleado.cargo }}</p>
+                </div>
+                <a href="{% url 'horas_trabajadas' %}" class="btn btn-outline-light">
+                    <i class="bi bi-arrow-left me-2"></i>Volver
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <!-- Filtros de fecha -->
+
+
+        <!-- Resumen rápido del período -->
+        <div class="col-12 col-lg-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-muted mb-4">Resumen del período</h5>
+                    <div class="text-center">
+                        <div class="mb-4">
+                            <span class="text-muted">Días trabajados</span>
+                            <h2 class="mb-0 text-primary">{{ total_horas }}</h2>
+                        </div>
+                        <div>
+                            <span class="text-muted">Total pagado</span>
+                            <h2 class="mb-0 text-success">${{ total_pago|floatformat:2 }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Registros -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h5 class="card-title mb-0">Registro detallado</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="px-4">
+                                <i class="bi bi-calendar-date me-2"></i>Fecha
+                            </th>
+                            <th>
+                                <i class="bi bi-clock me-2"></i>Inicio
+                            </th>
+                            <th>
+                                <i class="bi bi-clock-history me-2"></i>Fin
+                            </th>
+                            <th>
+                                <i class="bi bi-hourglass-split me-2"></i>Días
+                            </th>
+                            <th class="text-end px-4">
+                                <i class="bi bi-currency-dollar me-2"></i>Pago
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for registro in registros %}
+                        <tr>
+                            <td class="px-4">{{ registro.fecha|date:"l, d F Y" }}</td>
+                            <td>
+                                <span class="badge bg-primary">{{ registro.hora_inicio|date:"H:i" }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ registro.hora_fin|date:"H:i" }}</span>
+                            </td>
+                            <td>
+                                <strong>{{ registro.horas_trabajadas }}</strong>
+                            </td>
+                            <td class="text-end px-4">
+                                <span class="text-success fw-bold">${{ registro.pago_calculado|floatformat:2 }}</span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">
+                                <i class="bi bi-calendar-x display-4 d-block mb-2"></i>
+                                No hay registros para el período seleccionado
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script para validación de fechas -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fechaInicio = document.getElementById('fecha_inicio');
+    const fechaFin = document.getElementById('fecha_fin');
+
+    // Actualizar fecha fin mínima cuando cambia fecha inicio
+    fechaInicio.addEventListener('change', function() {
+        fechaFin.min = fechaInicio.value;
+        if (fechaFin.value < fechaInicio.value) {
+            fechaFin.value = fechaInicio.value;
+        }
+    });
+
+    // Evitar que fecha fin sea menor que fecha inicio
+    fechaFin.addEventListener('change', function() {
+        if (fechaFin.value < fechaInicio.value) {
+            fechaFin.value = fechaInicio.value;
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventario y Compras{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Productos Section -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h2 class="h5 mb-0">Productos</h2>
+                    <a href="{% url 'crear_producto' %}" class="btn btn-primary btn-sm">Crear Producto</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Precio</th>
+                                    <th>Cantidad</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for producto in productos %}
+                                <tr>
+                                    <td>{{ producto.nombre }}</td>
+                                    <td>${{ producto.precio }}</td>
+                                    <td>{{ producto.cantidad }}</td>
+                                    <td>
+                                        <a href="{% url 'editar_producto' producto.id %}" class="btn btn-sm btn-warning">Editar</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Compras Section -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h2 class="h5 mb-0">Subir Factura</h2>
+                </div>
+                <div class="card-body">
+                    <!-- Manual Upload Form -->
+                    <form id="uploadForm" enctype="multipart/form-data" class="mb-4">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="imagen" class="form-label">Imagen de Factura</label>
+                            <input type="file" class="form-control" id="imagen" name="imagen" accept="image/*" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="total" class="form-label">Total</label>
+                            <input type="number" class="form-control" id="total" name="total" step="0.01" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Subir Factura</button>
+                    </form>
+
+                    <!-- Mobile Upload Button -->
+                    <button id="generateMobileLink" class="btn btn-success">
+                        Generar Link para Móvil
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="h5 mb-0">Facturas de Compras</h2>
+                </div>
+                <div class="card-body">
+                    {% regroup compras by fecha.date|date:"Y-m" as compras_por_mes %}
+                    
+                    <div class="accordion" id="comprasAccordion">
+                        {% for mes in compras_por_mes %}
+                        <div class="accordion-item">
+                            <h3 class="accordion-header" id="heading{{ forloop.counter }}">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                        data-bs-target="#collapse{{ forloop.counter }}">
+                                    {{ mes.grouper|date:"F Y" }}
+                                </button>
+                            </h3>
+                            <div id="collapse{{ forloop.counter }}" class="accordion-collapse collapse" 
+                                 data-bs-parent="#comprasAccordion">
+                                <div class="accordion-body">
+                                    {% regroup mes.list by fecha.date as compras_por_dia %}
+                                    {% for dia in compras_por_dia %}
+                                    <div class="mb-3">
+                                        <h4 class="h6">{{ dia.grouper|date:"d F" }}</h4>
+                                        <div class="list-group">
+                                            {% for compra in dia.list %}
+                                            <div class="list-group-item list-group-item-action">
+                                                <div class="d-flex w-100 justify-content-between">
+                                                    <h5 class="mb-1">Factura #{{ compra.id }}</h5>
+                                                    <small>${{ compra.total }}</small>
+                                                </div>
+                                                {% if compra.imagen %}
+                                                <a href="{{ compra.imagen.url }}" target="_blank" 
+                                                   class="btn btn-sm btn-info mt-2">Ver Factura</a>
+                                                {% endif %}
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for form handling -->
+<script>
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    
+    fetch('{% url "upload_factura" %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al subir la factura');
+    });
+});
+
+document.getElementById('generateMobileLink').addEventListener('click', function() {
+    fetch('{% url "generate_mobile_link" %}')
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            window.open(data.whatsapp_url, '_blank');
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al generar el enlace');
+    });
+});
+</script>
+{% endblock %}

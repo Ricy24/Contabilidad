@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% load humanize %}
+
+
+
+{% block content %}
+<main class="container py-5">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Dashboard de Ventas</h1>
+        <div class="text-muted">{{ fecha_actual|date:"d/m/Y" }}</div>
+    </div>
+
+    <!-- Cards de estadísticas -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <h6 class="card-subtitle mb-2 text-muted">Ventas Hoy</h6>
+                        <i class="bi bi-graph-up text-success"></i>
+                    </div>
+                    <h3 class="card-title mb-3">{{ ventas_hoy|floatformat:0|intcomma }}</h3>
+                    {% if ventas_hoy > ventas_ayer %}
+                        <small class="text-success"><i class="bi bi-arrow-up"></i> vs ayer</small>
+                    {% elif ventas_hoy < ventas_ayer %}
+                        <small class="text-danger"><i class="bi bi-arrow-down"></i> vs ayer</small>
+                    {% else %}
+                        <small class="text-muted">Sin cambios vs ayer</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <h6 class="card-subtitle mb-2 text-muted">Ventas Ayer</h6>
+                        <i class="bi bi-calendar text-primary"></i>
+                    </div>
+                    <h3 class="card-title mb-3">{{ ventas_ayer|floatformat:0|intcomma }}</h3>
+                    <small class="text-muted">Cierre anterior</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <h6 class="card-subtitle mb-2 text-muted">Productos</h6>
+                        <i class="bi bi-box text-info"></i>
+                    </div>
+                    <div class="small">
+                        {% for producto in productos_mas_vendidos|slice:":3" %}
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>{{ producto.producto__nombre }}</span>
+                                <span class="text-muted">{{ producto.total }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <h6 class="card-subtitle mb-2 text-muted">Ingreso diario</h6>
+                        <i class="bi bi-exclamation-triangle text-warning"></i>
+                    </div>
+                    <h3 class="card-title mb-3">${{ ingreso_total_hoy|floatformat:3 }}</h3>
+                    <small class="text-warning">Tus ganancias del dia de hoy</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<!-- Lista de Empleados -->
+<!-- Sección de Empleados -->
+<div class="container py-4">
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="h4 mb-0">Control de Personal</h2>
+                <span class="text-muted small">{{ fecha_actual|date:"l, d F Y" }}</span>
+            </div>
+
+            <div class="row g-4">
+                {% for empleado in empleados %}
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card h-100 {% if empleado.id in turnos_activos %}border-success{% else %}border-light{% endif %}">
+                        <!-- Cabecera del Card -->
+                        <div class="card-header {% if empleado.id in turnos_activos %}bg-success bg-opacity-10{% endif %} border-bottom-0">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h3 class="h5 mb-1">{{ empleado.nombre }}</h3>
+                                    <p class="text-muted small mb-0">{{ empleado.cargo }}</p>
+                                </div>
+                                <span class="badge {% if empleado.activo %}bg-success{% else %}bg-danger{% endif %} rounded-pill">
+                                    {{ empleado.activo|yesno:"Activo,Inactivo" }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Información del Turno -->
+                        <div class="card-body">
+                            {% if empleado.id in turnos_activos %}
+                            {% with turno=turnos_activos|get:empleado.id %}
+                            <div class="mb-3">
+                                <div class="row g-3">
+                                    <div class="col-6">
+                                        <p class="text-muted small mb-1">Inicio del turno:</p>
+                                        <p class="fw-semibold mb-0">{{ turno.hora_inicio|time:"H:i" }}</p>
+                                    </div>
+                                    <div class="col-6">
+                                        <p class="text-muted small mb-1">Tiempo transcurrido:</p>
+                                        <p class="fw-semibold mb-0">
+                                            <span class="timer" 
+                                                  data-start="{{ turno.hora_inicio|date:'Y-m-d H:i:s' }}"
+                                                  id="timer-{{ empleado.id }}">
+                                                Calculando...
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <form action="{% url 'finalizar_turno_empleado' empleado.id %}" method="POST">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger w-100">
+                                    Finalizar Turno
+                                </button>
+                            </form>
+                            {% endwith %}
+                            {% else %}
+                            <form action="{% url 'iniciar_turno_empleado' empleado.id %}" method="POST">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-success w-100">
+                                    Iniciar Turno
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+
+                        <!-- Footer con enlace a detalles -->
+                        <div class="card-footer bg-light">
+                            <a href="{% url 'detalle_empleado_horas' empleado.id %}" 
+                               class="text-decoration-none d-flex justify-content-between align-items-center">
+                                <span class="text-primary">Ver registro de días</span>
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mensajes de notificación -->
+{% if messages %}
+<div class="fixed bottom-4 right-4 z-50">
+    {% for message in messages %}
+    <div class="bg-white rounded-lg shadow-lg p-4 mb-4 border-l-4 {% if message.tags == 'success' %}border-green-500{% else %}border-red-500{% endif %} animate-slide-in">
+        <p class="text-sm {% if message.tags == 'success' %}text-green-800{% else %}text-red-800{% endif %}">
+            {{ message }}
+        </p>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+
+<!-- Scripts -->
+<script>
+// Función para formatear el tiempo transcurrido
+function formatTimeDuration(hours, minutes, seconds) {
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+// Función para actualizar todos los temporizadores
+function updateTimers() {
+    document.querySelectorAll('.timer').forEach(timer => {
+        const startTime = new Date(timer.dataset.start);
+        const now = new Date();
+        const diff = now - startTime;
+        
+        const hours = Math.floor(diff / 3600000);
+        const minutes = Math.floor((diff % 3600000) / 60000);
+        const seconds = Math.floor((diff % 60000) / 1000);
+        
+        timer.textContent = formatTimeDuration(hours, minutes, seconds);
+    });
+}
+
+// Iniciar la actualización de temporizadores
+document.addEventListener('DOMContentLoaded', function() {
+    // Actualizar temporizadores
+    updateTimers();
+    setInterval(updateTimers, 1000);
+    
+    // Auto-ocultar toasts
+    var toasts = document.querySelectorAll('.toast');
+    toasts.forEach(function(toast) {
+        setTimeout(function() {
+            toast.classList.remove('show');
+        }, 5000);
+    });
+});
+</script>
+    <!-- Frase motivacional -->
+    <div class="card border-0 shadow-sm text-center mt-4">
+        <div class="card-body">
+            <blockquote class="blockquote mb-0">
+                <p>{{ frase_motivacional }}</p>
+                <footer class="blockquote-footer">Motivación del día</footer>
+            </blockquote>
+        </div>
+    </div>
+</main>
+{% endblock content %}
+
+<style>
+.avatar-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+</style>

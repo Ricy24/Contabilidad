@@ -1,0 +1,128 @@
+
+
+{% extends 'base.html' %}
+
+{% block title %}Registrar venta{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Registrar Venta</h1>
+    <form method="POST">
+        {% csrf_token %}
+        
+        <div id="productos-container">
+            <div class="producto-entrada mb-3">
+                <div class="row">
+                    <div class="col-md-5">
+                        <label for="producto">Producto:</label>
+                        <select name="producto[]" class="form-control producto-select" required>
+                            <option value="">Seleccione un producto</option>
+                            {% for producto in productos %}
+                            <option value="{{ producto.id }}" data-precio="{{ producto.precio }}">
+                                {{ producto.nombre }} - ${{ producto.precio |floatformat:3 }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="cantidad">Cantidad:</label>
+                        <input type="number" name="cantidad[]" class="form-control cantidad-input" 
+                               min="1" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label>Subtotal:</label>
+                        <div class="subtotal">$0.00</div>
+                    </div>
+                    <div class="col-md-1">
+                        <button type="button" class="btn btn-danger remove-producto">&times;</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button type="button" id="agregar-producto" class="btn btn-secondary mb-3">
+            Agregar otro producto
+        </button>
+
+        <div class="form-group mb-3">
+            <label for="generar_factura">¿Generar Factura?</label>
+            <input type="checkbox" name="generar_factura" id="generar_factura">
+        </div>
+
+        <div id="datos_factura" class="form-group mb-3" style="display: none;">
+            <label for="nombre_cliente">Nombre del Cliente:</label>
+            <input type="text" name="nombre_cliente" id="nombre_cliente" class="form-control">
+
+        </div>
+
+        <div class="total-venta mb-3">
+            <h4>Total: $<span id="total-cantidad">0.000</span></h4>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Registrar Venta</button>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const productosContainer = document.getElementById('productos-container');
+    const agregarProductoBtn = document.getElementById('agregar-producto');
+    const totalSpan = document.getElementById('total-cantidad');
+    const facturaCheckbox = document.getElementById('generar_factura');
+    const datosFactura = document.getElementById('datos_factura');
+    const nombreCliente = document.getElementById('nombre_cliente');
+
+    // Función para calcular subtotales y total
+    function calcularTotales() {
+        let total = 0;
+        document.querySelectorAll('.producto-entrada').forEach(entrada => {
+            const select = entrada.querySelector('.producto-select');
+            const cantidad = entrada.querySelector('.cantidad-input').value;
+            const subtotalDiv = entrada.querySelector('.subtotal');
+            
+            if (select.selectedIndex > 0 && cantidad) {
+                const precio = parseFloat(select.options[select.selectedIndex].dataset.precio);
+                const subtotal = precio * parseInt(cantidad);
+                subtotalDiv.textContent = `$${subtotal.toFixed(2)}`;
+                total += subtotal;
+            }
+        });
+        totalSpan.textContent = total.toFixed(2);
+    }
+
+    // Agregar nuevo producto
+    agregarProductoBtn.addEventListener('click', function() {
+        const nuevaEntrada = productosContainer.children[0].cloneNode(true);
+        nuevaEntrada.querySelectorAll('input, select').forEach(input => {
+            input.value = '';
+        });
+        nuevaEntrada.querySelector('.subtotal').textContent = '$0.00';
+        productosContainer.appendChild(nuevaEntrada);
+        
+        // Reconectar eventos
+        conectarEventos(nuevaEntrada);
+    });
+
+    // Conectar eventos a una entrada de producto
+    function conectarEventos(entrada) {
+        entrada.querySelector('.producto-select').addEventListener('change', calcularTotales);
+        entrada.querySelector('.cantidad-input').addEventListener('input', calcularTotales);
+        entrada.querySelector('.remove-producto').addEventListener('click', function() {
+            if (productosContainer.children.length > 1) {
+                entrada.remove();
+                calcularTotales();
+            }
+        });
+    }
+
+    // Conectar eventos iniciales
+    conectarEventos(productosContainer.children[0]);
+
+    // Manejar checkbox de factura
+    facturaCheckbox.addEventListener('change', function() {
+        datosFactura.style.display = this.checked ? 'block' : 'none';
+        nombreCliente.required = this.checked;
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section with Navigation -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 m-0">Dashboard de Análisis</h1>
+        <a href="{% url 'reporte_financiero' %}" class="btn btn-primary">
+            <i class="fas fa-file-invoice-dollar me-2"></i>Ver Reporte Financiero
+        </a>
+    </div>
+
+    <!-- Resumen General -->
+    <div class="row g-4 mb-4">
+        <!-- Ventas Card -->
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="card-subtitle mb-2 text-muted">Ventas Totales</h6>
+                            <h3 class="card-title mb-3">${{ ventas_data.total_ventas|default:0|floatformat:3|intcomma }}</h3>
+                        </div>
+                        <div class="rounded-circle bg-primary bg-opacity-10 p-3">
+                            <i class="fas fa-shopping-cart text-primary"></i>
+                        </div>
+                    </div>
+                    <p class="card-text mb-0 text-muted">
+                        <i class="fas fa-box me-1"></i>Cantidad: {{ ventas_data.cantidad_ventas|default:0 }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Compras Card -->
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="card-subtitle mb-2 text-muted">Compras Totales</h6>
+                            <h3 class="card-title mb-3">${{ compras_data.total_compras|default:0|floatformat:3|intcomma }}</h3>
+                        </div>
+                        <div class="rounded-circle bg-warning bg-opacity-10 p-3">
+                            <i class="fas fa-truck text-warning"></i>
+                        </div>
+                    </div>
+                    <p class="card-text mb-0 text-muted">
+                        <i class="fas fa-boxes me-1"></i>Cantidad: {{ compras_data.cantidad_compras|default:0 }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nómina Card -->
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="card-subtitle mb-2 text-muted">Gastos en Nómina</h6>
+                            <h3 class="card-title mb-3">${{ nomina_data.total_pagos|default:0|floatformat:3|intcomma }}</h3>
+                        </div>
+                        <div class="rounded-circle bg-info bg-opacity-10 p-3">
+                            <i class="fas fa-users text-info"></i>
+                        </div>
+                    </div>
+                    <p class="card-text mb-0 text-muted">
+                        <i class="fas fa-clock me-1"></i>Dias: {{ nomina_data.dias_trabajadas|default:0 }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Utilidad Card -->
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="card-subtitle mb-2 text-muted">Utilidad Total</h6>
+                            <h3 class="card-title mb-3">${{ utilidad|floatformat:3|intcomma }}</h3>
+                        </div>
+                        <div class="rounded-circle bg-success bg-opacity-10 p-3">
+                            <i class="fas fa-chart-line text-success"></i>
+                        </div>
+                    </div>
+                    <p class="card-text mb-0 text-muted">
+                        <i class="fas fa-percentage me-1"></i>Margen de Ganancia
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Productos Más Vendidos -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-star text-warning me-2"></i>Productos Más Vendidos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Cantidad</th>
+                                    <th>Ingresos</th>
+                                    <th>Tendencia</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for producto in productos_vendidos %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-light rounded p-2 me-3">
+                                                <i class="fas fa-box text-primary"></i>
+                                            </div>
+                                            <span>{{ producto.producto__nombre }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ producto.cantidad_total }}</span>
+                                    </td>
+                                    <td>${{ producto.ingresos_total|floatformat:3|intcomma }}</td>
+                                    <td>
+                                        <i class="fas fa-arrow-up text-success"></i>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+    .card {
+        transition: transform 0.2s;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+    }
+    .table th {
+        font-weight: 600;
+    }
+    .badge {
+        padding: 0.5em 1em;
+    }
+</style>
+{% endblock %}
+{% endblock %}

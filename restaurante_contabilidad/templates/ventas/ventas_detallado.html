@@ -1,0 +1,259 @@
+
+
+{% extends 'base.html' %}
+{% load filters %}
+{% block title %}Análisis Detallado de Ventas{% endblock %}
+
+
+{% block content %}
+<div class="container">
+    <!-- Encabezado -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1>Análisis Detallado de Ventas</h1>
+        </div>
+        <div class="col text-end">
+            <a href="{% url 'lista_ventas' %}" class="btn btn-secondary">
+                <i class="fas fa-list"></i> Ver Lista Simple
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Fecha Inicio</label>
+                    <input type="date" name="fecha_inicio" class="form-control" value="{{ fecha_inicio|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Fecha Fin</label>
+                    <input type="date" name="fecha_fin" class="form-control" value="{{ fecha_fin|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Período</label>
+                    <select name="periodo" class="form-select">
+                        <option value="diario" {% if periodo == 'diario' %}selected{% endif %}>Diario</option>
+                        <option value="semanal" {% if periodo == 'semanal' %}selected{% endif %}>Semanal</option>
+                        <option value="mensual" {% if periodo == 'mensual' %}selected{% endif %}>Mensual</option>
+                        <option value="anual" {% if periodo == 'anual' %}selected{% endif %}>Anual</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Vista</label>
+                    <select name="view_type" class="form-select">
+                        <option value="lista" {% if not view_type %}selected{% endif %}>Lista</option>
+                        <option value="detallado" {% if view_type == 'detallado' %}selected{% endif %}>Detallado</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter"></i> Aplicar Filtros
+                    </button>
+                    <a href="{% url 'lista_ventas' %}?view_type=detallado" class="btn btn-secondary">
+                        <i class="fas fa-undo"></i> Limpiar Filtros
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="imprimir">
+    <button onclick="window.print()">GUARDAR INFORME</button>
+    </div>
+    <br>
+    <!-- Resumen General -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total Ingresos</h6>
+                    <h3 class="mb-0">${{ estadisticas.total_ingresos|floatformat:3 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total Ventas</h6>
+                    <h3 class="mb-0">{{ estadisticas.total_ventas }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Promedio por Venta</h6>
+                    <h3 class="mb-0">${{ estadisticas.promedio_venta|floatformat:3 }}</h3>
+                </div>
+            </div>
+        </div>
+
+
+    <!-- Tabla de Ventas por Período -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Detalle de Ventas por {{ periodo|title }}</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Período</th>
+                            <th class="text-end">Cantidad Ventas</th>
+                            <th class="text-end">Total Ventas</th>
+                            <th class="text-end">Promedio por Venta</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for venta in ventas_agrupadas %}
+                        <tr>
+                            <td>{{ venta.periodo_fecha|date:"d/m/Y" }}</td>
+                            <td class="text-end">{{ venta.cantidad_ventas }}</td>
+                            <td class="text-end">${{ venta.total_ventas|floatformat:3 }}</td>
+                            <td class="text-end">${{ venta.total_ventas|div:venta.cantidad_ventas|floatformat:3 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Productos Más Vendidos -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Top 10 Productos Más Vendidos</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Producto</th>
+                            <th class="text-end">Cantidad Vendida</th>
+                            <th class="text-end">Total Ingresos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for producto in productos_mas_vendidos %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ producto.producto__nombre }}</td>
+                            <td class="text-end">{{ producto.total_vendido }}</td>
+                            <td class="text-end">${{ producto.total_ingresos|floatformat:3}}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gráfico de Ventas por Período
+    const ctxVentas = document.getElementById('graficoVentas').getContext('2d');
+    const ventas = {{ ventas_agrupadas|safe }};
+    
+    new Chart(ctxVentas, {
+        type: 'line',
+        data: {
+            labels: ventas.map(v => new Date(v.periodo_fecha).toLocaleDateString()),
+            datasets: [{
+                label: 'Total Ventas',
+                data: ventas.map(v => v.total_ventas),
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: value => '$' + value.toLocaleString()
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: context => '$' + context.parsed.y.toLocaleString()
+                    }
+                }
+            }
+        }
+    });
+
+    // Gráfico de Top Productos
+    const ctxProductos = document.getElementById('graficoProductos').getContext('2d');
+    const productos = {{ productos_mas_vendidos|safe }};
+    
+    new Chart(ctxProductos, {
+        type: 'doughnut',
+        data: {
+            labels: productos.slice(0, 5).map(p => p.producto__nombre),
+            datasets: [{
+                data: productos.slice(0, 5).map(p => p.total_vendido),
+                backgroundColor: [
+                    '#FF6384',
+                    '#36A2EB',
+                    '#FFCE56',
+                    '#4BC0C0',
+                    '#9966FF'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+});
+</script>
+
+<style>
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+}
+.table th {
+    font-weight: 600;
+}
+
+.imprimir button {
+    background-color: #4CAF50; /* Fondo verde */
+    color: white; /* Texto blanco */
+    padding: 10px 20px; /* Espaciado interno */
+    border: none; /* Sin borde */
+    border-radius: 5px; /* Bordes redondeados */
+    font-size: 16px; /* Tamaño de fuente */
+    cursor: pointer; /* Cambia el cursor al pasar por encima */
+    transition: background-color 0.3s ease, transform 0.3s ease; /* Transiciones suaves */
+}
+
+.imprimir button:hover {
+    background-color: #45a049; /* Fondo más oscuro cuando pasa el ratón */
+    transform: scale(1.05); /* Aumenta el tamaño al pasar el ratón */
+}
+
+.imprimir button:focus {
+    outline: none; /* Elimina el borde de foco */
+}
+</style>
+{% endblock %}

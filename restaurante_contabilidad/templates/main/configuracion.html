@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% block title %}Configuración del Restaurante{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary bg-gradient text-white py-3">
+                    <h4 class="card-title mb-0">
+                        <i class="bi bi-gear-fill me-2"></i>
+                        Configuración del Restaurante
+                    </h4>
+                </div>
+                
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data" id="configForm" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold" for="nombre_restaurante">
+                                        <i class="bi bi-shop me-2"></i>Nombre del Restaurante
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control form-control-lg" 
+                                           id="nombre_restaurante" 
+                                           name="nombre_restaurante" 
+                                           value="{{ config.nombre_restaurante }}"
+                                           required>
+                                    <div class="invalid-feedback">
+                                        Por favor ingrese el nombre del restaurante
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold" for="nit">
+                                        <i class="bi bi-card-text me-2"></i>NIT
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="nit" 
+                                           name="nit" 
+                                           value="{{ config.nit }}"
+                                           pattern="[0-9-]*"
+                                           required>
+                                    <div class="invalid-feedback">
+                                        Ingrese un NIT válido
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold" for="direccion">
+                                        <i class="bi bi-geo-alt me-2"></i>Dirección
+                                    </label>
+                                    <textarea class="form-control" 
+                                              id="direccion" 
+                                              name="direccion" 
+                                              rows="2"
+                                              required>{{ config.direccion }}</textarea>
+                                    <div class="invalid-feedback">
+                                        Por favor ingrese la dirección
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold" for="telefono">
+                                        <i class="bi bi-telephone me-2"></i>Teléfono
+                                    </label>
+                                    <input type="tel" 
+                                           class="form-control" 
+                                           id="telefono" 
+                                           name="telefono" 
+                                           value="{{ config.telefono }}"
+                                           pattern="[0-9-+\s]*"
+                                           required>
+                                    <div class="invalid-feedback">
+                                        Ingrese un teléfono válido
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold" for="email">
+                                        <i class="bi bi-envelope me-2"></i>Email
+                                    </label>
+                                    <input type="email" 
+                                           class="form-control" 
+                                           id="email" 
+                                           name="email" 
+                                           value="{{ config.email }}"
+                                           required>
+                                    <div class="invalid-feedback">
+                                        Ingrese un email válido
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        
+ 
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="button" class="btn btn-secondary me-md-2" onclick="resetForm()">
+                                <i class="bi bi-x-circle me-2"></i>Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-2"></i>Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Validación de formulario
+(function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms).forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+            form.classList.add('was-validated')
+        }, false)
+    })
+})()
+
+
+
+// Resetear formulario
+function resetForm() {
+    document.getElementById('configForm').reset();
+    document.getElementById('configForm').classList.remove('was-validated');
+    document.getElementById('logoPreview').src = '{{ config.logo.url|default:"/static/img/default-logo.png" }}';
+}
+
+// Mostrar toast de éxito
+{% if messages %}
+    {% for message in messages %}
+        if (message.tags === 'success') {
+            const toast = new bootstrap.Toast(document.getElementById('successToast'));
+            toast.show();
+        }
+    {% endfor %}
+{% endif %}
+</script>
+
+{% endblock %}

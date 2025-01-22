@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+
+{% block title %}Lista de Ventas{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>Lista de Ventas</h1>
+        </div>
+        <div class="col text-end">
+            <a href="{% url 'registrar_venta' %}" class="btn btn-success">
+                <i class="fas fa-plus"></i> Registrar Venta
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros y Calendario -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Fecha Inicio</label>
+                    <input type="date" name="fecha_inicio" class="form-control" value="{{ fecha_inicio|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Fecha Fin</label>
+                    <input type="date" name="fecha_fin" class="form-control" value="{{ fecha_fin|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Período</label>
+                    <select name="periodo" class="form-select">
+                        <option value="diario" {% if periodo == 'diario' %}selected{% endif %}>Diario</option>
+                        <option value="semanal" {% if periodo == 'semanal' %}selected{% endif %}>Semanal</option>
+                        <option value="mensual" {% if periodo == 'mensual' %}selected{% endif %}>Mensual</option>
+                        <option value="anual" {% if periodo == 'anual' %}selected{% endif %}>Anual</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Vista</label>
+                    <select name="view_type" class="form-select">
+                        <option value="lista" {% if not view_type %}selected{% endif %}>Lista</option>
+                        <option value="detallado" {% if view_type == 'detallado' %}selected{% endif %}>Detallado</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
+                    <a href="{% url 'lista_ventas' %}" class="btn btn-secondary">Limpiar Filtros</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Tabla de Ventas -->
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th>Productos</th>
+                    <th>Total</th>
+                    <th>Factura</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for venta in ventas %}
+                <tr>
+                    <td>{{ venta.id }}</td>
+                    <td>{{ venta.fecha|date:"d/m/Y H:i" }}</td>
+                    <td>
+                        {% if venta.factura_set.exists %}
+                            {{ venta.factura_set.first.cliente.nombre }}
+                        {% else %}
+                            Sin cliente registrado
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" type="button" 
+                                data-bs-toggle="collapse" 
+                                data-bs-target="#detalles-{{ venta.id }}" 
+                                aria-expanded="false">
+                            Ver {{ venta.detalleventa_set.count }} productos
+                        </button>
+                        <div class="collapse mt-2" id="detalles-{{ venta.id }}">
+                            <div class="card card-body p-2">
+                                <table class="table table-sm mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Producto</th>
+                                            <th>Cantidad</th>
+                                            <th>P. Unit.</th>
+                                            <th>Subtotal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for detalle in venta.detalleventa_set.all %}
+                                        <tr>
+                                            <td>{{ detalle.producto.nombre }}</td>
+                                            <td>{{ detalle.cantidad }}</td>
+                                            <td>${{ detalle.precio_unitario |floatformat:3 }}</td>
+                                            <td>${{ detalle.subtotal |floatformat:3 }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-end">${{ venta.subtotal |floatformat:3 }}</td>
+                    <td>
+                        {% if venta.factura_set.exists %}
+                            <span class="factura-generada">
+                                Factura #{{ venta.factura_set.first.numero_factura }}
+                            </span>
+                        {% else %}
+                            <span class="sin-factura">Sin factura</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="btn-group">
+                            {% if venta.factura_set.exists %}
+                                <a href="{% url 'ver_factura' factura_id=venta.factura_set.first.id %}" class="btn btn-sm btn-info">
+                                    Ver Factura
+                                </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if is_paginated %}
+    <nav aria-label="Navegación de páginas">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.fecha_inicio %}&fecha_inicio={{ request.GET.fecha_inicio }}{% endif %}{% if request.GET.fecha_fin %}&fecha_fin={{ request.GET.fecha_fin }}{% endif %}{% if request.GET.periodo %}&periodo={{ request.GET.periodo }}{% endif %}">Anterior</a>
+                </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}{% if request.GET.fecha_inicio %}&fecha_inicio={{ request.GET.fecha_inicio }}{% endif %}{% if request.GET.fecha_fin %}&fecha_fin={{ request.GET.fecha_fin }}{% endif %}{% if request.GET.periodo %}&periodo={{ request.GET.periodo }}{% endif %}">{{ num }}</a>
+                </li>
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.fecha_inicio %}&fecha_inicio={{ request.GET.fecha_inicio }}{% endif %}{% if request.GET.fecha_fin %}&fecha_fin={{ request.GET.fecha_fin }}{% endif %}{% if request.GET.periodo %}&periodo={{ request.GET.periodo }}{% endif %}">Siguiente</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<style>
+.table-responsive {
+    margin-bottom: 1rem;
+}
+.badge {
+    font-size: 0.875rem;
+}
+.btn-group {
+    gap: 0.25rem;
+}
+.collapse {
+    width: 100%;
+}
+.card-body {
+    background-color: #f8f9fa;
+}
+.factura-generada {
+    color: #198754;
+    font-weight: 500;
+}
+.sin-factura {
+    color: #dc3545;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configuración del gráfico de ventas
+    const ctx = document.getElementById('graficoVentas').getContext('2d');
+    const ventas = {{ ventas_agrupadas|safe }};
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ventas.map(v => v.periodo_fecha),
+            datasets: [{
+                label: 'Ventas',
+                data: ventas.map(v => v.total_ventas),
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Resto del código JavaScript existente...
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %}

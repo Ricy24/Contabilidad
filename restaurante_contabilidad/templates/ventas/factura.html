@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Factura #{{ factura.numero_factura }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+        }
+        .factura {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+        }
+        .info-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .cliente-info, .factura-info {
+            flex: 1;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .total {
+            text-align: right;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 0.9em;
+        }
+        @media print {
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="factura">
+        <div class="header">
+            <h1>{{ restaurante.nombre }}</h1>
+            <p>NIT: {{ restaurante.nit }}</p>
+            <p>{{ restaurante.direccion }}</p>
+            <p>Tel: {{ restaurante.telefono }}</p>
+            <h2>FACTURA DE VENTA</h2>
+            <h3>No. {{ factura.numero_factura }}</h3>
+        </div>
+
+        <div class="info-container">
+            <div class="cliente-info">
+                <p><strong>Nombre:</strong> {{ cliente.nombre }}</p>
+                <p><strong>Fecha:</strong> {{ venta.fecha|date:"d/m/Y" }}</p>
+                <p><strong>Hora:</strong> {{ venta.fecha|time:"H:i:s" }}</p>
+                <p><strong>{{ restaurante.libre }}</strong></p>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Precio Unitario</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for detalle in venta.detalleventa_set.all %}
+                <tr>
+                    <td>{{ detalle.producto.nombre }}</td>
+                    <td>{{ detalle.cantidad }}</td>
+                    <td>${{ detalle.precio_unitario |floatformat:3 }}</td>
+                    <td>${{ detalle.subtotal |floatformat:3 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="total">
+            <p>Total: ${{ venta.subtotal |floatformat:3 }}</p>
+        </div>
+
+        <div class="footer">
+            <p>¡Gracias por su compra!</p>
+        </div>
+        
+        <div class="no-print">
+            <button onclick="window.print()">Imprimir Factura</button>
+            <a href="{% url 'lista_ventas' %}">
+                <button>Volver a la lista</button>
+            </a>
+        </div>
+    </div>
+</body>
+</html>
